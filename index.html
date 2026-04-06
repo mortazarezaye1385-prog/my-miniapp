@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>EarnCryptoFaucet</title>
+    <title>Telegram Mini App with AdsGram</title>
     <style type="text/css">
         *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
         body{font-family:system-ui,Roboto,sans-serif;background:linear-gradient(145deg,#1a1e2b 0%,#0f121c 100%);color:#fff;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:0 0 70px 0;margin:0}
@@ -89,7 +89,7 @@
 (function(){
 var MAX_COINS = 1000;
 var PER_AD = 10;
-var AD_BLOCK_ID = 27015;  // بلاک آیدی جدید 27015
+var AD_BLOCK_ID = 27016;  // بلاک آیدی جدید 27016 برای تست
 
 var userData = {
     totalCoins: 0,
@@ -196,7 +196,7 @@ function checkReferral(){
     }
 }
 
-// نمایش تبلیغ ادس‌گرام با بلاک آیدی 27015
+// نمایش تبلیغ ادس‌گرام با بلاک آیدی 27016
 function showAdsGramAd(callback) {
     if (typeof window.adsgram !== 'undefined') {
         console.log("Showing AdsGram ad with blockId:", AD_BLOCK_ID);
@@ -356,4 +356,4 @@ updateRefLink();
 // ]]>
 </script>
 </body>
-                    </html>
+</html>
