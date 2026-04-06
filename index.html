@@ -89,6 +89,328 @@
 (function(){
 var MAX_COINS = 1000;
 var PER_AD = 10;
+var AD_BLOCK_ID = 27015;  // بلاک آیدی جدید 27015
+
+var userData = {
+    totalCoins: 0,
+    watchedCount: 0,
+    referralCoins: 0,
+    referredBy: null,
+    myReferralCode: null,
+    userId: null
+};
+var videos = [
+    {id:1, title:"Sponsor Ad 1", thumb:"🎥"},
+    {id:2, title:"Promo Video 2", thumb:"📱"},
+    {id:3, title:"Special Ad 3", thumb:"⚡"},
+    {id:4, title:"Bonus Video 4", thumb:"🏆"}
+];
+
+// تشخیص محیط
+var isTelegramEnv = false;
+function detectEnvironment(){
+    try {
+        if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
+            isTelegramEnv = true;
+            document.getElementById("envBadge").innerHTML = "📱 Telegram Mode";
+            document.getElementById("envBadge").style.background = "rgba(108,99,255,0.8)";
+            return true;
+        }
+    } catch(e) {}
+    
+    if(window.location.href.includes("tgWebAppData") || window.location.href.includes("telegram")) {
+        isTelegramEnv = true;
+        document.getElementById("envBadge").innerHTML = "📱 Telegram Mode";
+        document.getElementById("envBadge").style.background = "rgba(108,99,255,0.8)";
+        return true;
+    }
+    
+    isTelegramEnv = false;
+    document.getElementById("envBadge").innerHTML = "🌐 Web Mode (Test)";
+    document.getElementById("envBadge").style.background = "rgba(0,0,0,0.6)";
+    return false;
+}
+
+function loadData(){
+    var saved = localStorage.getItem("tg_miniapp_data");
+    if(saved){
+        try{
+            var p = JSON.parse(saved);
+            for(var k in p) if(p.hasOwnProperty(k)) userData[k] = p[k];
+        }catch(e){}
+    }
+    
+    var isTelegram = detectEnvironment();
+    
+    if(isTelegram && window.Telegram && Telegram.WebApp){
+        try {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            var u = Telegram.WebApp.initDataUnsafe.user;
+            if(u && u.id){
+                userData.userId = u.id;
+                var un = document.getElementById("userName");
+                if(un) un.innerText = u.first_name || "User";
+                var uid = document.getElementById("userId");
+                if(uid) uid.innerText = userData.userId;
+                if(!userData.myReferralCode) userData.myReferralCode = "ref_" + userData.userId;
+            } else {
+                throw new Error("No user data");
+            }
+        } catch(e) {
+            userData.userId = userData.userId || Math.floor(Math.random()*1000000);
+            var un2 = document.getElementById("userName");
+            if(un2) un2.innerText = "Guest (Mock)";
+            var uid2 = document.getElementById("userId");
+            if(uid2) uid2.innerText = userData.userId;
+            if(!userData.myReferralCode) userData.myReferralCode = "ref_" + userData.userId;
+        }
+    } else {
+        userData.userId = userData.userId || Math.floor(Math.random()*100000);
+        var un3 = document.getElementById("userName");
+        if(un3) un3.innerText = "Demo User (Test)";
+        var uid3 = document.getElementById("userId");
+        if(uid3) uid3.innerText = userData.userId;
+        if(!userData.myReferralCode) userData.myReferralCode = "demo_" + userData.userId;
+    }
+    
+    updateUI();
+    saveData();
+    checkReferral();
+}
+
+function saveData(){
+    localStorage.setItem("tg_miniapp_data", JSON.stringify(userData));
+}
+
+function checkReferral(){
+    var p = new URLSearchParams(window.location.search);
+    var ref = p.get("ref");
+    if(ref && ref !== userData.myReferralCode && !userData.referredBy){
+        userData.referredBy = ref;
+        userData.totalCoins = userData.totalCoins + 200;
+        userData.referralCoins = userData.referralCoins + 200;
+        showMsg("🎉 Referral bonus! +200 coins!");
+        updateUI();
+        saveData();
+    }
+}
+
+// نمایش تبلیغ ادس‌گرام با بلاک آیدی 27015
+function showAdsGramAd(callback) {
+    if (typeof window.adsgram !== 'undefined') {
+        console.log("Showing AdsGram ad with blockId:", AD_BLOCK_ID);
+        
+        window.adsgram.showAd({
+            blockId: AD_BLOCK_ID,
+            onReward: function(result) {
+                console.log('Ad finished, rewarding user', result);
+                showMsg("✅ Ad completed! +10 coins");
+                if (callback) callback(true);
+            },
+            onError: function(error) {
+                console.error('Ad error details:', error);
+                var errorMsg = "Ad Error";
+                if (error && error.message) errorMsg += ": " + error.message;
+                showMsg("❌ " + errorMsg);
+                if (callback) callback(false);
+            },
+            onSkip: function() {
+                console.log('Ad skipped');
+                showMsg("⚠️ Ad was skipped. Watch full ad to earn coins.");
+                if (callback) callback(false);
+            },
+            onClose: function() {
+                console.log('Ad closed');
+                showMsg("⚠️ Ad closed before completion");
+                if (callback) callback(false);
+            }
+        });
+    } else {
+        console.warn('AdsGram not loaded');
+        showMsg("❌ Ad service not ready. Check your internet connection.");
+        if (callback) callback(false);
+    }
+}
+
+function watchAd() {
+    var earned = userData.watchedCount * PER_AD;
+    if (earned >= MAX_COINS) {
+        showMsg("⛔ Max 1000 coins reached!");
+        return;
+    }
+
+    showMsg("🎬 Loading ad... Please wait");
+
+    showAdsGramAd(function(success) {
+        if (success) {
+            userData.totalCoins = userData.totalCoins + PER_AD;
+            userData.watchedCount = userData.watchedCount + 1;
+            showMsg("✅ +10 Coins! Total: " + userData.totalCoins);
+            updateUI();
+            saveData();
+        } else {
+            showMsg("❌ Ad failed or skipped. No coins added.");
+        }
+    });
+}
+
+function updateUI(){
+    var hc = document.getElementById("homeCoins");
+    if(hc) hc.innerText = userData.totalCoins;
+    var tc = document.getElementById("totalCoinsProfile");
+    if(tc) tc.innerText = userData.totalCoins;
+    var wc = document.getElementById("watchedCount");
+    if(wc) wc.innerText = userData.watchedCount;
+    var rc = document.getElementById("refCoinsEarned");
+    if(rc) rc.innerText = userData.referralCoins;
+    
+    var earned = userData.watchedCount * PER_AD;
+    var remain = Math.max(0, MAX_COINS - earned);
+    var li = document.getElementById("limitInfo");
+    if(li) li.innerHTML = "💰 Remaining: " + remain + " coins";
+    var prog = document.getElementById("dailyProgress");
+    if(prog) prog.value = Math.min(earned, MAX_COINS);
+    renderVideos();
+}
+
+function renderVideos(){
+    var cont = document.getElementById("videoListContainer");
+    if(!cont) return;
+    cont.innerHTML = "";
+    for(var i=0; i<videos.length; i++){
+        var v = videos[i];
+        var div = document.createElement("div");
+        div.className = "video-item";
+        div.innerHTML = '<div><span style="font-size:28px">'+v.thumb+'</span> <strong>'+v.title+'</strong></div><button class="video-play" data-id="'+v.id+'">▶️ Watch +10</button>';
+        cont.appendChild(div);
+    }
+    var btns = document.querySelectorAll(".video-play");
+    for(var j=0; j<btns.length; j++){
+        btns[j].onclick = function(e){
+            e.stopPropagation();
+            watchAd();
+        };
+    }
+}
+
+function showMsg(msg){
+    var old = document.querySelector(".toast-message");
+    if(old) old.remove();
+    var t = document.createElement("div");
+    t.className = "toast-message";
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3000);
+}
+
+function updateRefLink(){
+    var url = window.location.href.split("?")[0];
+    var link = url + "?ref=" + userData.myReferralCode;
+    var rl = document.getElementById("referralLink");
+    if(rl) rl.innerHTML = link;
+    return link;
+}
+
+function initTabs(){
+    var btns = document.querySelectorAll(".tab-btn");
+    var panes = document.querySelectorAll(".tab-pane");
+    for(var i=0; i<btns.length; i++){
+        btns[i].onclick = (function(btn){
+            return function(){
+                var id = btn.getAttribute("data-tab");
+                for(var j=0; j<btns.length; j++) btns[j].classList.remove("active");
+                btn.classList.add("active");
+                for(var j=0; j<panes.length; j++) panes[j].classList.remove("active");
+                if(id === "home") document.getElementById("home-tab").classList.add("active");
+                if(id === "referral") document.getElementById("referral-tab").classList.add("active");
+                if(id === "profile"){
+                    document.getElementById("profile-tab").classList.add("active");
+                    updateUI();
+                }
+            };
+        })(btns[i]);
+    }
+}
+
+var mainBtn = document.getElementById("mainWatchBtn");
+if(mainBtn) mainBtn.onclick = function(){ watchAd(); };
+
+var invBtn = document.getElementById("inviteBtn");
+if(invBtn){
+    invBtn.onclick = function(){
+        var l = updateRefLink();
+        if(navigator.share && isTelegramEnv){
+            navigator.share({title: "Join Mini App", text: l});
+        }else{
+            navigator.clipboard.writeText(l);
+            showMsg("Link copied!");
+        }
+    };
+}
+
+loadData();
+initTabs();
+updateRefLink();
+})();
+// ]]>
+</script>
+</body>
+</html>            <div class="card" style="text-align:center">
+                <span style="font-size:48px">🎬</span>
+                <h2 style="margin:12px 0">Watch and Earn</h2>
+                <p>Get 10 coins per ad view!</p>
+                <div style="margin:25px 0">
+                    <div class="coin-badge">💰 <span id="homeCoins">0</span> Coins</div>
+                </div>
+                <button class="watch-btn" id="mainWatchBtn">📺 WATCH AD <span style="font-size:14px">+10 🪙</span></button>
+                <p style="font-size:12px;margin-top:20px">Max 1000 coins from videos ($0.001)</p>
+                <progress id="dailyProgress" value="0" max="1000"></progress>
+                <span id="limitInfo" style="font-size:13px;display:block;margin-top:8px"></span>
+            </div>
+        </div>
+        <div class="tab-pane" id="referral-tab">
+            <div class="card">
+                <h3>👥 Invite Friends</h3>
+                <p style="margin:12px 0">Get 200 bonus coins per referral!</p>
+                <div class="coin-badge" style="margin:10px 0">🏆 Referral Coins: <span id="refCoinsEarned">0</span></div>
+                <button id="inviteBtn" style="background:#28a745;border:none;padding:14px;border-radius:50px;color:white;width:100%;font-weight:bold;margin:15px 0">📢 Share Invite Link</button>
+                <div id="referralLink" style="background:#0a0c14;padding:12px;border-radius:20px;word-break:break-all;font-size:12px"></div>
+            </div>
+        </div>
+        <div class="tab-pane" id="profile-tab">
+            <div class="profile-header">
+                <div class="avatar" id="userAvatar">😎</div>
+                <div>
+                    <h3 id="userName">Telegram User</h3>
+                    <p>🆔 <span id="userId">12345</span></p>
+                </div>
+            </div>
+            <div class="card">
+                <div style="display:flex;justify-content:space-between"><span>💰 Total Coins:</span><strong id="totalCoinsProfile">0</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:10px"><span>🎥 Ads Watched:</span><span id="watchedCount">0</span></div>
+                <hr />
+                <h4>📺 Ad Videos Gallery</h4>
+                <div id="videoListContainer"></div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-tabs">
+        <button class="tab-btn active" data-tab="home">🏠<span>Home</span></button>
+        <button class="tab-btn" data-tab="referral">👥<span>Referral</span></button>
+        <button class="tab-btn" data-tab="profile">👤<span>Profile</span></button>
+    </div>
+</div>
+<div class="debug-badge" id="envBadge">🌐 Web Mode</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.adsgram.ai/js/adsgram.js"></script>
+
+<script type="text/javascript">
+// <![CDATA[
+(function(){
+var MAX_COINS = 1000;
+var PER_AD = 10;
 var AD_BLOCK_ID = 27009;  // بلاک آیدی جدید
 
 var userData = {
