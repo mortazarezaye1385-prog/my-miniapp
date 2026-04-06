@@ -82,14 +82,14 @@
 <div class="debug-badge" id="envBadge">🌐 Web Mode</div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.adsgram.ai/js/adsgram.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
 <script type="text/javascript">
 // <![CDATA[
 (function(){
 var MAX_COINS = 1000;
 var PER_AD = 10;
-var AD_BLOCK_ID = 27018;  // بلاک آیدی تستی
+var AD_BLOCK_ID = 27020;  // بلاک آیدی جدید 27020
 
 var userData = {
     totalCoins: 0,
@@ -197,45 +197,51 @@ function checkReferral(){
 }
 
 // ==================================================
-// نمایش تبلیغ تستی ادس‌گرام با حالت دیباگ فعال
+// نمایش تبلیغ ادس‌گرام با حالت تست فعال
 // ==================================================
-function showAdsGramAd(callback) {
-    // بررسی وجود کتابخانه AdsGram
-    if (typeof window.Adsgram !== 'undefined') {
-        console.log("Initializing AdsGram (TEST MODE) with blockId:", AD_BLOCK_ID);
-        
-        // مقداردهی اولیه با فعال بودن حالت دیباگ (debug: true)
-        const AdController = window.Adsgram.init({
-            blockId: AD_BLOCK_ID,
-            debug: true,                    // فعال کردن حالت تست
-            debugBannerType: "RewardedVideo" // نوع تبلیغ جایزه‌دار
-        });
+let adController = null;
 
-        // نمایش تبلیغ
-        AdController.show()
-            .then((result) => {
-                console.log('Ad finished successfully', result);
-                if (result && result.done) {
-                    showMsg("✅ Test Ad completed! +10 coins");
-                    if (callback) callback(true);
-                } else {
-                    showMsg("⚠️ Ad wasn't fully watched.");
-                    if (callback) callback(false);
-                }
-            })
-            .catch((error) => {
-                console.error('Ad Error:', error);
-                let errorMsg = "Ad Error";
-                if (error && error.description) errorMsg += ": " + error.description;
-                else if (error && error.message) errorMsg += ": " + error.message;
-                showMsg("❌ " + errorMsg);
-                if (callback) callback(false);
-            });
-    } else {
-        console.warn('AdsGram library (window.Adsgram) not loaded!');
-        showMsg("❌ Ad service not loaded. Check your internet connection.");
-        if (callback) callback(false);
+function initAd() {
+    if (adController === null && typeof window.Adsgram !== 'undefined') {
+        console.log("Initializing AdsGram (TEST MODE) with blockId:", AD_BLOCK_ID);
+        adController = window.Adsgram.init({
+            blockId: AD_BLOCK_ID,
+            debug: true,                    // حالت تست فعال
+            debugBannerType: "RewardedVideo"
+        });
     }
+    return adController;
+}
+
+function showAdsGramAd(callback) {
+    const controller = initAd();
+    
+    if (!controller) {
+        console.warn('AdsGram library not initialized');
+        showMsg("❌ Ad service not ready. Check your internet connection.");
+        if (callback) callback(false);
+        return;
+    }
+
+    controller.show()
+        .then((result) => {
+            console.log('Ad finished successfully', result);
+            if (result && result.done) {
+                showMsg("✅ Test Ad completed! +10 coins");
+                if (callback) callback(true);
+            } else {
+                showMsg("⚠️ Ad wasn't fully watched.");
+                if (callback) callback(false);
+            }
+        })
+        .catch((error) => {
+            console.error('Ad Error:', error);
+            let errorMsg = "Ad Error";
+            if (error && error.description) errorMsg += ": " + error.description;
+            else if (error && error.message) errorMsg += ": " + error.message;
+            showMsg("❌ " + errorMsg);
+            if (callback) callback(false);
+        });
 }
 
 function watchAd() {
