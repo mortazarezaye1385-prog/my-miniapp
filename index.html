@@ -89,7 +89,7 @@
 (function(){
 var MAX_COINS = 1000;
 var PER_AD = 10;
-var AD_BLOCK_ID = ″27020″;  // بلاک آیدی جدید 27020
+var AD_BLOCK_ID = "27020";  // ✅ بلاک آیدی به صورت رشته (string)
 
 var userData = {
     totalCoins: 0,
@@ -205,8 +205,8 @@ function initAd() {
     if (adController === null && typeof window.Adsgram !== 'undefined') {
         console.log("Initializing AdsGram (TEST MODE) with blockId:", AD_BLOCK_ID);
         adController = window.Adsgram.init({
-            blockId: AD_BLOCK_ID,
-            debug: true,                    // حالت تست فعال
+            blockId: AD_BLOCK_ID,  // حالا این یک رشته است
+            debug: true,
             debugBannerType: "RewardedVideo"
         });
     }
@@ -367,4 +367,4 @@ updateRefLink();
 // ]]>
 </script>
 </body>
-</html>
+                        </html>
