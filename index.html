@@ -89,7 +89,7 @@
 (function(){
 var MAX_COINS = 1000;
 var PER_AD = 10;
-var AD_BLOCK_ID = 27018;  // بلاک آیدی جدید 27018
+var AD_BLOCK_ID = 27018;  // بلاک آیدی تستی
 
 var userData = {
     totalCoins: 0,
@@ -196,39 +196,44 @@ function checkReferral(){
     }
 }
 
-// نمایش تبلیغ ادس‌گرام با بلاک آیدی 27018
+// ==================================================
+// نمایش تبلیغ تستی ادس‌گرام با حالت دیباگ فعال
+// ==================================================
 function showAdsGramAd(callback) {
-    if (typeof window.adsgram !== 'undefined') {
-        console.log("Showing AdsGram ad with blockId:", AD_BLOCK_ID);
+    // بررسی وجود کتابخانه AdsGram
+    if (typeof window.Adsgram !== 'undefined') {
+        console.log("Initializing AdsGram (TEST MODE) with blockId:", AD_BLOCK_ID);
         
-        window.adsgram.showAd({
+        // مقداردهی اولیه با فعال بودن حالت دیباگ (debug: true)
+        const AdController = window.Adsgram.init({
             blockId: AD_BLOCK_ID,
-            onReward: function(result) {
-                console.log('Ad finished, rewarding user', result);
-                showMsg("✅ Ad completed! +10 coins");
-                if (callback) callback(true);
-            },
-            onError: function(error) {
-                console.error('Ad error details:', error);
-                var errorMsg = "Ad Error";
-                if (error && error.message) errorMsg += ": " + error.message;
+            debug: true,                    // فعال کردن حالت تست
+            debugBannerType: "RewardedVideo" // نوع تبلیغ جایزه‌دار
+        });
+
+        // نمایش تبلیغ
+        AdController.show()
+            .then((result) => {
+                console.log('Ad finished successfully', result);
+                if (result && result.done) {
+                    showMsg("✅ Test Ad completed! +10 coins");
+                    if (callback) callback(true);
+                } else {
+                    showMsg("⚠️ Ad wasn't fully watched.");
+                    if (callback) callback(false);
+                }
+            })
+            .catch((error) => {
+                console.error('Ad Error:', error);
+                let errorMsg = "Ad Error";
+                if (error && error.description) errorMsg += ": " + error.description;
+                else if (error && error.message) errorMsg += ": " + error.message;
                 showMsg("❌ " + errorMsg);
                 if (callback) callback(false);
-            },
-            onSkip: function() {
-                console.log('Ad skipped');
-                showMsg("⚠️ Ad was skipped. Watch full ad to earn coins.");
-                if (callback) callback(false);
-            },
-            onClose: function() {
-                console.log('Ad closed');
-                showMsg("⚠️ Ad closed before completion");
-                if (callback) callback(false);
-            }
-        });
+            });
     } else {
-        console.warn('AdsGram not loaded');
-        showMsg("❌ Ad service not ready. Check your internet connection.");
+        console.warn('AdsGram library (window.Adsgram) not loaded!');
+        showMsg("❌ Ad service not loaded. Check your internet connection.");
         if (callback) callback(false);
     }
 }
@@ -240,7 +245,7 @@ function watchAd() {
         return;
     }
 
-    showMsg("🎬 Loading ad... Please wait");
+    showMsg("🎬 Loading test ad... Please wait");
 
     showAdsGramAd(function(success) {
         if (success) {
