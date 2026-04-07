@@ -130,7 +130,7 @@ body{font-family:system-ui;background:linear-gradient(145deg,#1a1e2b,#0f121c);co
 var PER_AD=10;
 var SPECIAL_BONUS=20;
 var REFERRAL_BONUS=100;
-var AD_BLOCK_ID="27020";
+var AD_BLOCK_ID="27079";
 var WITHDRAW_MIN_FAUCET=5000;
 var WITHDRAW_MIN_DIRECT=10000;
 
@@ -188,7 +188,7 @@ var remaining=24-hoursPassed;
 return remaining>0?remaining:0;}
 
 var adController=null;
-function initAd(){if(adController===null&&typeof window.Adsgram!=="undefined"){adController=window.Adsgram.init({blockId:AD_BLOCK_ID,debug:true,debugBannerType:"RewardedVideo"})}return adController}
+function initAd(){if(adController===null&&typeof window.Adsgram!=="undefined"){adController=window.Adsgram.init({blockId:AD_BLOCK_ID,debug: false,debugBannerType:"RewardedVideo"})}return adController}
 function showAdsGramAd(callback){var controller=initAd();if(!controller){showMsg("❌ Ad service not ready");if(callback)callback(false);return}
 controller.show().then(function(result){if(result&&result.done){showMsg("✅ Ad completed!");if(callback)callback(true)}else{showMsg("⚠️ Ad wasn't fully watched");if(callback)callback(false)}}).catch(function(error){showMsg("❌ Ad Error");if(callback)callback(false)})}
 
