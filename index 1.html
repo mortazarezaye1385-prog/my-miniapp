@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Telegram Mini App</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:linear-gradient(145deg,#1a1e2b,#0f121c);color:#fff;min-height:100vh;display:flex;justify-content:center;align-items:center}
+.app-container{max-width:500px;width:100%;background:rgba(18,22,35,0.7);border-radius:32px;height:100vh;display:flex;flex-direction:column}
+.tab-content{flex:1;overflow-y:auto;padding:20px}
+.bottom-tabs{background:rgba(10,12,20,0.95);display:flex;justify-content:space-around;padding:12px 16px 20px;border-top:1px solid rgba(255,255,255,0.08);position:sticky;bottom:0}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.tab-btn{background:transparent;border:none;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:#8e8ea8;cursor:pointer}
+.tab-btn.active{color:#6c63ff}
+.card{background:rgba(255,255,255,0.05);border-radius:28px;padding:20px;margin-bottom:20px}
+.watch-btn{background:linear-gradient(135deg,#6c63ff,#3f37c9);border:none;padding:18px;width:100%;border-radius:60px;font-size:20px;font-weight:bold;color:white;cursor:pointer}
+.coin-badge{background:gold;color:#1a1e2b;padding:6px 14px;border-radius:50px;display:inline-flex;align-items:center;gap:6px}
+.profile-header{display:flex;align-items:center;gap:18px;margin-bottom:25px}
+.avatar{width:70px;height:70px;background:linear-gradient(145deg,#6c63ff,#8b85ff);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px}
+.video-item{background:rgba(0,0,0,0.3);margin:12px 0;padding:14px;border-radius:20px;display:flex;justify-content:space-between;align-items:center}
+.video-play{background:#2a2e45;border:none;color:white;padding:8px 16px;border-radius:40px;cursor:pointer}
+.toast-message{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1f1f2e;color:#ffd966;padding:12px 24px;border-radius:50px;z-index:1000}
+.inline-buttons{display:flex;gap:10px;margin-top:15px}
+.inline-btn{flex:1;background:#2a2e45;border:none;padding:12px;border-radius:50px;color:white;cursor:pointer}
+.withdraw-option{background:rgba(255,255,255,0.1);padding:15px;border-radius:20px;margin-bottom:12px;cursor:pointer}
+.referral-item{background:rgba(255,255,255,0.08);padding:10px;border-radius:16px;margin-bottom:8px}
+.debug-badge{position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:20px;font-size:10px}
+.leaderboard-item{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.08);padding:12px;border-radius:16px;margin-bottom:8px}
+.leaderboard-rank{font-weight:bold;font-size:18px;width:40px}
+.leaderboard-user{flex:1}
+.leaderboard-score{background:#6c63ff;padding:4px 12px;border-radius:20px;font-size:12px}
+.bonus-banner{background:linear-gradient(135deg,#f0b90b,#c99400);color:#1a1e2b;padding:12px;border-radius:20px;text-align:center;margin-bottom:15px}
+.update-time{font-size:10px;opacity:0.6;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app-container">
+<div class="tab-content">
+<!-- صفحه هوم -->
+<div class="tab-pane active" id="home-tab">
+<div class="card" style="text-align:center">
+<span style="font-size:48px">🎬</span>
+<h2>Watch & Earn Coins!</h2>
+<p style="margin:10px 0">🔥 Each ad = <strong>10 Coins</strong> 🔥</p>
+<p style="font-size:13px;opacity:0.8">💰 Watch more, earn more! No limits!</p>
+<p style="font-size:13px;color:#f0b90b;margin:5px 0">🐕 10 Coins = 0.0001 DOGE</p>
+<div style="margin:20px 0"><div class="coin-badge">💰 <span id="homeCoins">0</span> Coins</div></div>
+<button class="watch-btn" id="mainWatchBtn">📺 WATCH AD +10 🪙</button>
+<p style="font-size:12px;margin-top:20px">✨ Keep watching to collect more coins! ✨</p>
+</div>
+<!-- ویدیو گالری به اینجا منتقل شد -->
+<div class="card">
+<h4>📺 Ad Videos Gallery</h4>
+<div id="videoListContainer"></div>
+</div>
+<!-- گزینه Fast Payment (Web3 Wallet) -->
+<div class="card">
+<h4>⚡ Fast Payment (Web3 Wallet)</h4>
+<p style="font-size:13px;opacity:0.8">Minimum 1000 coins | Instant withdrawal to your Web3 wallet</p>
+<button id="fastPayBtn" class="inline-btn" style="margin-top:10px;background:linear-gradient(135deg,#f0b90b,#c99400);color:#1a1e2b">💸 Withdraw via Web3 Wallet</button>
+</div>
+</div>
+
+<!-- صفحه ریفرال -->
+<div class="tab-pane" id="referral-tab">
+<div class="card">
+<h3>👥 Invite Friends</h3>
+<p>Get 100 bonus coins per referral!</p>
+<div class="coin-badge" style="margin:10px 0">🏆 Referral Coins: <span id="refCoinsEarned">0</span></div>
+<div class="inline-buttons">
+<button id="shareInviteBtn" class="inline-btn">📢 Share Link</button>
+<button id="copyInviteBtn" class="inline-btn">📋 Copy Link</button>
+</div>
+<hr>
+<h4>Your Referrals (<span id="referralCount">0</span>)</h4>
+<div id="referralListContainer"><p style="text-align:center;opacity:0.5">No referrals yet</p></div>
+</div>
+</div>
+
+<!-- صفحه لیدربورد (جدید) -->
+<div class="tab-pane" id="leaderboard-tab">
+<div class="card">
+<h3 style="text-align:center">🏆 Top Watchers 🏆</h3>
+<div class="bonus-banner">
+🎁 Daily Bonus: <strong>1 DOGE</strong> to top 10 watchers! 🎁
+</div>
+<div id="leaderboardList">
+<p style="text-align:center;opacity:0.5">Loading leaderboard...</p>
+</div>
+<div class="update-time" id="updateTime">Next update: --:--:--</div>
+</div>
+</div>
+
+<!-- صفحه پروفایل -->
+<div class="tab-pane" id="profile-tab">
+<div class="profile-header"><div class="avatar">😎</div><div><h3 id="userName">User</h3><p>🆔 <span id="userId">12345</span></p></div></div>
+<div class="card">
+<div><span>💰 Total Coins:</span> <strong id="totalCoinsProfile">0</strong></div>
+<div style="margin-top:10px"><span>🐕 DOGE Value:</span> <strong id="dogeValue">0</strong> DOGE</div>
+<div style="margin-top:10px"><span>🎥 Ads Watched:</span> <span id="watchedCount">0</span></div>
+<hr>
+<h4>💸 Withdraw Options</h4>
+<div id="withdrawOptions">
+<div class="withdraw-option" data-type="fast"><h4>⚡ Fast Payment (Web3)</h4><p>Min: 1000 coins | Instant</p></div>
+<div class="withdraw-option" data-type="direct"><h4>💰 Direct Wallet (DOGE)</h4><p>Min: 5000 coins | 24-48h</p></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="bottom-tabs">
+<button class="tab-btn active" data-tab="home">🏠<span>Home</span></button>
+<button class="tab-btn" data-tab="referral">👥<span>Referral</span></button>
+<button class="tab-btn" data-tab="leaderboard">🏆<span>Leaderboard</span></button>
+<button class="tab-btn" data-tab="profile">👤<span>Profile</span></button>
+</div>
+</div>
+<div class="debug-badge" id="envBadge">🌐 Web Mode</div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<script>
+(function(){
+var PER_AD=10,REFERRAL_BONUS=100,AD_BLOCK_ID="27020";
+var userData={totalCoins:0,watchedCount:0,referralCoins:0,referredBy:null,myReferralCode:null,userId:null,referrals:[]};
+var videos=[{id:1,title:"Sponsor Ad 1",thumb:"🎥"},{id:2,title:"Promo Video 2",thumb:"📱"},{id:3,title:"Special Ad 3",thumb:"⚡"},{id:4,title:"Bonus Video 4",thumb:"🏆"}];
+var leaderboard=[]; // [{userId, userName, watchedCount}]
+var lastResetDate=null;
+
+// تشخیص محیط
+var isTelegramEnv=false;
+function detectEnvironment(){
+try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe){isTelegramEnv=true;document.getElementById("envBadge").innerHTML="📱 Telegram Mode";return true}}catch(e){}
+isTelegramEnv=false;document.getElementById("envBadge").innerHTML="🌐 Web Mode";return false}
+
+// بارگذاری دیتا
+function loadData(){
+var saved=localStorage.getItem("tg_miniapp_data");
+if(saved){try{var p=JSON.parse(saved);for(var k in p)if(p.hasOwnProperty(k))userData[k]=p[k]}catch(e){}}
+if(!userData.referrals)userData.referrals=[];
+detectEnvironment();
+if(window.Telegram&&Telegram.WebApp){
+try{Telegram.WebApp.ready();Telegram.WebApp.expand();var u=Telegram.WebApp.initDataUnsafe.user;
+if(u&&u.id){userData.userId=u.id;document.getElementById("userName").innerText=u.first_name||"User";document.getElementById("userId").innerText=userData.userId;
+if(!userData.myReferralCode)userData.myReferralCode="ref_"+userData.userId}
+else throw new Error()}catch(e){userData.userId=userData.userId||Math.floor(Math.random()*1000000);document.getElementById("userName").innerText="Guest";document.getElementById("userId").innerText=userData.userId;if(!userData.myReferralCode)userData.myReferralCode="ref_"+userData.userId}}
+else{userData.userId=userData.userId||Math.floor(Math.random()*100000);document.getElementById("userName").innerText="Demo User";document.getElementById("userId").innerText=userData.userId;if(!userData.myReferralCode)userData.myReferralCode="demo_"+userData.userId}
+loadLeaderboard();updateUI();saveData();checkReferral()}
+
+function saveData(){localStorage.setItem("tg_miniapp_data",JSON.stringify(userData))}
+
+function checkReferral(){
+var p=new URLSearchParams(window.location.search),ref=p.get("ref");
+if(ref&&ref!==userData.myReferralCode&&!userData.referredBy){
+userData.referredBy=ref;userData.totalCoins+=REFERRAL_BONUS;userData.referralCoins+=REFERRAL_BONUS;
+showMsg("🎉 Referral bonus! +"+REFERRAL_BONUS+" coins!");updateUI();saveData()}}
+
+// لیدربورد
+function loadLeaderboard(){
+var saved=localStorage.getItem("tg_leaderboard");
+if(saved){try{leaderboard=JSON.parse(saved)}catch(e){}}
+checkAndResetLeaderboard();updateLeaderboardUI()}
+
+function checkAndResetLeaderboard(){
+var now=new Date();
+if(!lastResetDate){lastResetDate=localStorage.getItem("tg_last_reset");if(lastResetDate)lastResetDate=new Date(lastResetDate)}
+var shouldReset=false;
+if(!lastResetDate){shouldReset=true}
+else{var hoursDiff=(now-lastResetDate)/(1000*60*60);if(hoursDiff>=24)shouldReset=true}
+if(shouldReset){
+if(leaderboard.length>0){
+var topUsers=leaderboard.slice(0,10);
+for(var i=0;i<topUsers.length;i++){
+var winner=topUsers[i];
+var winnerData=getUserDataById(winner.userId);
+if(winnerData){
+winnerData.totalCoins=winnerData.totalCoins+1; // 1 DOGE value (10 coins)
+winnerData.totalCoins+=10;
+showMsg("🎉 "+winner.userName+" won 1 DOGE from leaderboard!");
+saveUserData(winnerData)}}
+showMsg("🏆 Daily leaderboard reset! Top 10 winners received 1 DOGE each!")}
+leaderboard=[];lastResetDate=now;localStorage.setItem("tg_last_reset",lastResetDate.toISOString());localStorage.removeItem("tg_leaderboard")}}
+
+function getUserDataById(userId){
+if(userId==userData.userId)return userData;
+var allData=localStorage.getItem("tg_all_users");if(allData){var users=JSON.parse(allData);for(var i=0;i<users.length;i++)if(users[i].userId==userId)return users[i]}
+return null}
+
+function saveUserData(data){if(data.userId==userData.userId){for(var k in data)if(data.hasOwnProperty(k))userData[k]=data[k];saveData()}
+else{var allData=localStorage.getItem("tg_all_users");var users=allData?JSON.parse(allData):[];var found=false;for(var i=0;i<users.length;i++){if(users[i].userId==data.userId){users[i]=data;found=true;break}}
+if(!found)users.push(data);localStorage.setItem("tg_all_users",JSON.stringify(users))}}
+
+function updateLeaderboard(){
+var existingIndex=-1;
+for(var i=0;i<leaderboard.length;i++){if(leaderboard[i].userId==userData.userId){existingIndex=i;break}}
+if(existingIndex!==-1){leaderboard[existingIndex].watchedCount=userData.watchedCount;leaderboard[existingIndex].userName=document.getElementById("userName").innerText}
+else{leaderboard.push({userId:userData.userId,userName:document.getElementById("userName").innerText,watchedCount:userData.watchedCount})}
+leaderboard.sort(function(a,b){return b.watchedCount-a.watchedCount});
+if(leaderboard.length>50)leaderboard=leaderboard.slice(0,50);
+localStorage.setItem("tg_leaderboard",JSON.stringify(leaderboard));
+updateLeaderboardUI()}
+
+function updateLeaderboardUI(){
+var container=document.getElementById("leaderboardList");if(!container)return;
+if(leaderboard.length===0){container.innerHTML='<p style="text-align:center;opacity:0.5">No data yet. Watch ads to appear!</p>';return}
+var html="";
+for(var i=0;i<Math.min(leaderboard.length,10);i++){var item=leaderboard[i];var medal="";
+if(i==0)medal="🥇";else if(i==1)medal="🥈";else if(i==2)medal="🥉";else medal=i+1+"";
+html+='<div class="leaderboard-item"><div class="leaderboard-rank">'+medal+'</div><div class="leaderboard-user"><strong>'+escapeHtml(item.userName)+'</strong><br><span style="font-size:11px">🆔 '+item.userId+'</span></div><div class="leaderboard-score">🎥 '+item.watchedCount+' ads</div></div>'}
+container.innerHTML=html;
+var nextReset=new Date(lastResetDate);nextReset.setHours(nextReset.getHours()+24);
+var now=new Date();var diff=nextReset-now;var hours=Math.floor(diff/(1000*60*60));var minutes=Math.floor((diff%(1000*60*60))/(1000*60));
+document.getElementById("updateTime").innerHTML="Next update: "+hours+"h "+minutes+"m"}
+
+function escapeHtml(str){if(!str)return"";return str.replace(/[&<>]/g,function(m){if(m==='&')return'&amp;';if(m==='<')return'&lt;';if(m==='>')return'&gt;';return m})}
+
+// تبلیغات
+var adController=null;
+function initAd(){if(adController===null&&typeof window.Adsgram!=="undefined"){adController=window.Adsgram.init({blockId:AD_BLOCK_ID,debug:true,debugBannerType:"RewardedVideo"})}return adController}
+function showAdsGramAd(callback){var controller=initAd();if(!controller){showMsg("❌ Ad service not ready");if(callback)callback(false);return}
+controller.show().then(function(result){if(result&&result.done){showMsg("✅ Ad completed! +10 coins");if(callback)callback(true)}else{showMsg("⚠️ Ad wasn't fully watched");if(callback)callback(false)}}).catch(function(error){showMsg("❌ Ad Error");if(callback)callback(false)})}
+
+function watchAd(){showMsg("🎬 Loading ad...");showAdsGramAd(function(success){if(success){userData.totalCoins+=PER_AD;userData.watchedCount++;showMsg("✅ +10 Coins! Total: "+userData.totalCoins);updateUI();saveData();updateLeaderboard()}
+else{showMsg("❌ Ad failed")}})}
+
+function updateUI(){
+document.getElementById("homeCoins").innerText=userData.totalCoins;
+document.getElementById("totalCoinsProfile").innerText=userData.totalCoins;
+document.getElementById("watchedCount").innerText=userData.watchedCount;
+document.getElementById("refCoinsEarned").innerText=userData.referralCoins;
+var dogeValue=(userData.totalCoins/10)*0.0001;
+document.getElementById("dogeValue").innerText=dogeValue.toFixed(6);
+document.getElementById("referralCount").innerText=userData.referrals?userData.referrals.length:0;
+renderVideos();renderReferralList()}
+
+function renderVideos(){var cont=document.getElementById("videoListContainer");if(!cont)return;cont.innerHTML="";for(var i=0;i<videos.length;i++){var v=videos[i];var div=document.createElement("div");div.className="video-item";
+div.innerHTML='<div><span style="font-size:28px">'+v.thumb+'</span> <strong>'+v.title+'</strong></div><button class="video-play">▶️ Watch +10</button>';cont.appendChild(div)}
+var btns=document.querySelectorAll(".video-play");for(var j=0;j<btns.length;j++){btns[j].onclick=function(){watchAd()}}}
+
+function renderReferralList(){var cont=document.getElementById("referralListContainer");if(!cont)return;
+if(!userData.referrals||userData.referrals.length===0){cont.innerHTML='<p style="text-align:center;opacity:0.5">No referrals yet</p>';return}
+cont.innerHTML="";for(var i=0;i<userData.referrals.length;i++){var div=document.createElement("div");div.className="referral-item";div.innerHTML='👤 User ID: '+userData.referrals[i].userId;cont.appendChild(div)}}
+
+function showMsg(msg){var old=document.querySelector(".toast-message");if(old)old.remove();var t=document.createElement("div");t.className="toast-message";t.innerText=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
+
+function updateRefLink(){var url=window.location.href.split("?")[0];var link=url+"?ref="+userData.myReferralCode;return link}
+
+function initTabs(){var btns=document.querySelectorAll(".tab-btn"),panes=document.querySelectorAll(".tab-pane");
+for(var i=0;i<btns.length;i++){btns[i].onclick=(function(btn){return function(){var id=btn.getAttribute("data-tab");
+for(var j=0;j<btns.length;j++)btns[j].classList.remove("active");btn.classList.add("active");
+for(var j=0;j<panes.length;j++)panes[j].classList.remove("active");document.getElementById(id+"-tab").classList.add("active");
+if(id==="profile"||id==="referral")updateUI();if(id==="leaderboard"){updateLeaderboardUI()}}})(btns[i])}}
+
+// دکمه‌ها
+document.getElementById("mainWatchBtn").onclick=function(){watchAd()};
+document.getElementById("shareInviteBtn").onclick=function(){var l=updateRefLink();if(navigator.share)navigator.share({title:"Join Mini App",text:"Join me on this Mini App and earn coins!"});else{navigator.clipboard.writeText(l);showMsg("Link copied!")}};
+document.getElementById("copyInviteBtn").onclick=function(){var l=updateRefLink();navigator.clipboard.writeText(l);showMsg("✅ Invite link copied!")};
+document.getElementById("fastPayBtn").onclick=function(){if(userData.totalCoins>=1000)showMsg("⚡ Fast Payment request sent to your Web3 wallet!");else showMsg("❌ You need at least 1000 coins!")};
+document.querySelector(".withdraw-option[data-type='fast']").onclick=function(){if(userData.totalCoins>=1000)showMsg("⚡ Fast Payment (Web3) request sent!");else showMsg("❌ Need 1000 coins")};
+document.querySelector(".withdraw-option[data-type='direct']").onclick=function(){if(userData.totalCoins>=5000)showMsg("💰 Direct Wallet (DOGE) request sent!");else showMsg("❌ Need 5000 coins")};
+
+setInterval(function(){checkAndResetLeaderboard();updateLeaderboardUI()},3600000);
+loadData();initTabs();
+})();
+</script>
+</body>
+</html>
